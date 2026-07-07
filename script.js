@@ -137,9 +137,10 @@ function cronoKmUse() {
   document.getElementById('crono-km-display').classList.remove('running');
   const h = Math.floor(cronoKmSeconds / 3600);
   const m = Math.floor((cronoKmSeconds % 3600) / 60);
-  document.getElementById('k-horas').value = h;
-  document.getElementById('k-minutos').value = m;
-  calcKm();
+  document.getElementById('h-horas').value = h;
+  document.getElementById('h-minutos').value = m;
+  calcHoras();
+  switchTab('horas');
   cronoKmSeconds = 0;
   document.getElementById('crono-km-display').textContent = '00:00:00';
   document.getElementById('crono-km-earning').textContent = '';
