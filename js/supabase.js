@@ -137,5 +137,15 @@ if (typeof supabase === 'undefined' || !supabase.createClient) {
       const { error } = await _sb.from('fletes').delete().neq('id', EMPTY_UUID);
       if (error) throw error;
     },
+
+    /* ---------------- MÉTRICAS ---------------- */
+    async getMetricasClientes() {
+      const { data, error } = await _sb
+        .from('metricas_clientes')
+        .select('id, nombre, total_fletes, total_facturado, ticket_promedio, ultimo_flete')
+        .order('total_facturado', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
   };
 }

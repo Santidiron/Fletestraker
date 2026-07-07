@@ -1,11 +1,19 @@
-const CACHE_NAME = 'fletestraker-v2';
+const CACHE_NAME = 'fletestraker-v3';
 const urlsToCache = [
   './',
   './index.html',
   './styles.css',
-  './script.js',
-  './supabaseClient.js',
   './manifest.json',
+  './js/supabase.js',
+  './js/core.js',
+  './js/pwa.js',
+  './js/tarifa.js',
+  './js/calculadora.js',
+  './js/cronometro.js',
+  './js/fletes.js',
+  './js/metricas.js',
+  './js/auth.js',
+  './js/app.js',
 ];
 
 self.addEventListener('install', (event) => {
