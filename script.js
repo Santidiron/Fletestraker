@@ -89,128 +89,130 @@ function applyRate(val) {
   calcKm();
 }
 
-let cronoKmSeconds = 0;
-let cronoKmInterval = null;
-let cronoKmRunning = false;
+// Fábrica de cronómetros. Ambos cronómetros (horas y km) comparten toda la
+// lógica; solo difieren en los IDs de sus elementos, el texto de ganancia y
+// una acción opcional al finalizar. El tiempo se calcula con marcas de tiempo
+// reales (Date.now) para no atrasarse cuando el navegador congela setInterval
+// mientras la página está en segundo plano.
+function crearCronometro({ displayId, earningId, startId, pauseId, useId, formatEarning, onFinish }) {
+  let seconds = 0;
+  let baseSeconds = 0; // segundos acumulados antes del tramo actual
+  let startMs = 0; // marca de tiempo (ms) en que arrancó el tramo actual
+  let interval = null;
+  let running = false;
 
-function cronoKmTick() {
-  cronoKmSeconds++;
-  const h = Math.floor(cronoKmSeconds / 3600);
-  const m = Math.floor((cronoKmSeconds % 3600) / 60);
-  const s = cronoKmSeconds % 60;
+  const $ = (id) => document.getElementById(id);
   const pad = (n) => String(n).padStart(2, '0');
-  document.getElementById('crono-km-display').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  const ganado = (cronoKmSeconds / 3600) * tarifaHora;
-  document.getElementById('crono-km-earning').textContent = `Tiempo: ${pad(h)}h ${pad(m)}m — $${fmt(ganado)} por tiempo`;
-}
 
-function cronoKmStart() {
-  if (cronoKmRunning) return;
-  cronoKmRunning = true;
-  cronoKmInterval = setInterval(cronoKmTick, 1000);
-  document.getElementById('crono-km-display').classList.add('running');
-  document.getElementById('crono-km-start').textContent = '▶️ Corriendo';
-  document.getElementById('crono-km-start').disabled = true;
-  document.getElementById('crono-km-pause').disabled = false;
-  document.getElementById('crono-km-use').disabled = false;
-}
-
-function cronoKmPause() {
-  if (!cronoKmRunning) {
-    cronoKmRunning = true;
-    cronoKmInterval = setInterval(cronoKmTick, 1000);
-    document.getElementById('crono-km-display').classList.add('running');
-    document.getElementById('crono-km-pause').textContent = '⏸️ Pausar';
-    document.getElementById('crono-km-start').disabled = true;
-  } else {
-    cronoKmRunning = false;
-    clearInterval(cronoKmInterval);
-    document.getElementById('crono-km-display').classList.remove('running');
-    document.getElementById('crono-km-pause').textContent = '▶️ Reanudar';
+  function render() {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    $(displayId).textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+    const ganado = (seconds / 3600) * tarifaHora;
+    $(earningId).textContent = formatEarning({ h, m, s, ganado, pad });
   }
-}
 
-function cronoKmUse() {
-  if (cronoKmSeconds === 0) return;
-  cronoKmRunning = false;
-  clearInterval(cronoKmInterval);
-  document.getElementById('crono-km-display').classList.remove('running');
-  const h = Math.floor(cronoKmSeconds / 3600);
-  const m = Math.floor((cronoKmSeconds % 3600) / 60);
-  document.getElementById('h-horas').value = h;
-  document.getElementById('h-minutos').value = m;
-  calcHoras();
-  switchTab('horas');
-  cronoKmSeconds = 0;
-  document.getElementById('crono-km-display').textContent = '00:00:00';
-  document.getElementById('crono-km-earning').textContent = '';
-  document.getElementById('crono-km-start').textContent = '▶️ Iniciar';
-  document.getElementById('crono-km-start').disabled = false;
-  document.getElementById('crono-km-pause').textContent = '⏸️ Pausar';
-  document.getElementById('crono-km-pause').disabled = true;
-  document.getElementById('crono-km-use').disabled = true;
-}
-
-let cronoSeconds = 0;
-let cronoInterval = null;
-let cronoRunning = false;
-
-function cronoTick() {
-  cronoSeconds++;
-  const h = Math.floor(cronoSeconds / 3600);
-  const m = Math.floor((cronoSeconds % 3600) / 60);
-  const s = cronoSeconds % 60;
-  const pad = (n) => String(n).padStart(2, '0');
-  document.getElementById('crono-display').textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
-  const ganado = (cronoSeconds / 3600) * tarifaHora;
-  document.getElementById('crono-earning').textContent = `Ganando: $${fmt(ganado)}`;
-}
-
-function cronoStart() {
-  if (cronoRunning) return;
-  cronoRunning = true;
-  cronoInterval = setInterval(cronoTick, 1000);
-  document.getElementById('crono-display').classList.add('running');
-  document.getElementById('crono-start').textContent = '▶️ Corriendo';
-  document.getElementById('crono-start').disabled = true;
-  document.getElementById('crono-pause').disabled = false;
-  document.getElementById('crono-use').disabled = false;
-}
-
-function cronoPause() {
-  if (!cronoRunning) {
-    cronoRunning = true;
-    cronoInterval = setInterval(cronoTick, 1000);
-    document.getElementById('crono-display').classList.add('running');
-    document.getElementById('crono-pause').textContent = '⏸️ Pausar';
-    document.getElementById('crono-start').disabled = true;
-  } else {
-    cronoRunning = false;
-    clearInterval(cronoInterval);
-    document.getElementById('crono-display').classList.remove('running');
-    document.getElementById('crono-pause').textContent = '▶️ Reanudar';
+  function tick() {
+    if (running) {
+      seconds = baseSeconds + Math.floor((Date.now() - startMs) / 1000);
+    }
+    render();
   }
+
+  function arrancar() {
+    running = true;
+    baseSeconds = seconds;
+    startMs = Date.now();
+    interval = setInterval(tick, 1000);
+    $(displayId).classList.add('running');
+  }
+
+  function start() {
+    if (running) return;
+    arrancar();
+    $(startId).textContent = '▶️ Corriendo';
+    $(startId).disabled = true;
+    $(pauseId).disabled = false;
+    $(useId).disabled = false;
+  }
+
+  function pause() {
+    if (!running) {
+      arrancar();
+      $(pauseId).textContent = '⏸️ Pausar';
+      $(startId).disabled = true;
+    } else {
+      running = false;
+      seconds = baseSeconds + Math.floor((Date.now() - startMs) / 1000);
+      clearInterval(interval);
+      render();
+      $(displayId).classList.remove('running');
+      $(pauseId).textContent = '▶️ Reanudar';
+    }
+  }
+
+  function use() {
+    if (seconds === 0) return;
+    running = false;
+    clearInterval(interval);
+    $(displayId).classList.remove('running');
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    $('h-horas').value = h;
+    $('h-minutos').value = m;
+    calcHoras();
+    if (onFinish) onFinish();
+    seconds = 0;
+    baseSeconds = 0;
+    $(displayId).textContent = '00:00:00';
+    $(earningId).textContent = '';
+    $(startId).textContent = '▶️ Iniciar';
+    $(startId).disabled = false;
+    $(pauseId).textContent = '⏸️ Pausar';
+    $(pauseId).disabled = true;
+    $(useId).disabled = true;
+  }
+
+  return { start, pause, use, tick, isRunning: () => running };
 }
 
-function cronoUse() {
-  if (cronoSeconds === 0) return;
-  cronoRunning = false;
-  clearInterval(cronoInterval);
-  document.getElementById('crono-display').classList.remove('running');
-  const h = Math.floor(cronoSeconds / 3600);
-  const m = Math.floor((cronoSeconds % 3600) / 60);
-  document.getElementById('h-horas').value = h;
-  document.getElementById('h-minutos').value = m;
-  calcHoras();
-  cronoSeconds = 0;
-  document.getElementById('crono-display').textContent = '00:00:00';
-  document.getElementById('crono-earning').textContent = '';
-  document.getElementById('crono-start').textContent = '▶️ Iniciar';
-  document.getElementById('crono-start').disabled = false;
-  document.getElementById('crono-pause').textContent = '⏸️ Pausar';
-  document.getElementById('crono-pause').disabled = true;
-  document.getElementById('crono-use').disabled = true;
-}
+const cronoKmCtrl = crearCronometro({
+  displayId: 'crono-km-display',
+  earningId: 'crono-km-earning',
+  startId: 'crono-km-start',
+  pauseId: 'crono-km-pause',
+  useId: 'crono-km-use',
+  formatEarning: ({ h, m, ganado, pad }) => `Tiempo: ${pad(h)}h ${pad(m)}m — $${fmt(ganado)} por tiempo`,
+  onFinish: () => switchTab('horas'),
+});
+
+const cronoCtrl = crearCronometro({
+  displayId: 'crono-display',
+  earningId: 'crono-earning',
+  startId: 'crono-start',
+  pauseId: 'crono-pause',
+  useId: 'crono-use',
+  formatEarning: ({ ganado }) => `Ganando: $${fmt(ganado)}`,
+});
+
+// Wrappers globales para los onclick del HTML.
+function cronoKmStart() { cronoKmCtrl.start(); }
+function cronoKmPause() { cronoKmCtrl.pause(); }
+function cronoKmUse() { cronoKmCtrl.use(); }
+function cronoStart() { cronoCtrl.start(); }
+function cronoPause() { cronoCtrl.pause(); }
+function cronoUse() { cronoCtrl.use(); }
+
+// Al volver a la app (o cuando la pestaña vuelve a ser visible) recalculamos
+// el tiempo transcurrido a partir de la marca de tiempo real, porque el
+// navegador congela/ralentiza setInterval mientras la página está en segundo plano.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (cronoKmCtrl.isRunning()) cronoKmCtrl.tick();
+    if (cronoCtrl.isRunning()) cronoCtrl.tick();
+  }
+});
 
 function calcHoras() {
   const horas = parseFloat(document.getElementById('h-horas').value) || 0;
