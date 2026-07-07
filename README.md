@@ -1,2 +1,2 @@
 # Fletestraker
-trakear valor de flete
+proyecto para realizar seguimiento a transportes realizados por YAGOS.
