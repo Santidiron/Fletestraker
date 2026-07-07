@@ -6,8 +6,8 @@
   <meta name="theme-color" content="#0099ff" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Fletes Yagos" />
-  <title>Calculadora Fletero</title>
+  <meta name="apple-mobile-web-app-title" content="Yagos Transportes" />
+  <title>Yagos Transportes - Calculadora de Viajes</title>
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png">
   <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png">
@@ -19,10 +19,11 @@
   <header>
     <div class="truck-icon">🚛</div>
     <div style="flex: 1;">
-      <h1>Calculadora Fletero</h1>
+      <h1>Yagos Transportes - Calculadora de Viajes</h1>
       <p>Tarifa base: $<span id="header-rate">600</span>/hora</p>
     </div>
     <button id="install-pwa-btn" class="install-btn" type="button">⬇️ Instalar</button>
+    <button id="logout-btn" class="install-btn logout-btn" type="button" style="display:none;" onclick="doLogout()">🚪 Salir</button>
   </header>
 
   <div class="tabs">
@@ -48,7 +49,7 @@
         <div class="crono-btns">
           <button class="crono-btn start" id="crono-start" onclick="cronoStart()">▶️ Iniciar</button>
           <button class="crono-btn pause" id="crono-pause" onclick="cronoPause()" disabled>⏸️ Pausar</button>
-          <button class="crono-btn use" id="crono-use" onclick="cronoUse()" disabled>✔️ Usar</button>
+          <button class="crono-btn use" id="crono-use" onclick="cronoUse()" disabled>✔️ Finalizar</button>
         </div>
       </div>
 
@@ -111,7 +112,7 @@
         <div class="crono-btns">
           <button class="crono-btn start" id="crono-km-start" onclick="cronoKmStart()">▶️ Iniciar</button>
           <button class="crono-btn pause" id="crono-km-pause" onclick="cronoKmPause()" disabled>⏸️ Pausar</button>
-          <button class="crono-btn use" id="crono-km-use" onclick="cronoKmUse()" disabled>✔️ Usar</button>
+          <button class="crono-btn use" id="crono-km-use" onclick="cronoKmUse()" disabled>✔️ Finalizar</button>
         </div>
       </div>
 
@@ -190,6 +191,27 @@
     </div>
   </main>
 
+  <div class="overlay" id="save-overlay" onclick="closeSaveOutside(event)">
+    <div class="modal">
+      <h3>Guardar cobro</h3>
+      <p>Elegí el cliente para registrar este flete en la nube.</p>
+      <div class="save-total-preview">Total a registrar: <strong>$<span id="save-total">0</span></strong></div>
+      <div class="field">
+        <label>Cliente</label>
+        <select id="save-cliente"></select>
+      </div>
+      <div class="field" id="new-cliente-field" style="display:none;">
+        <label>Nombre del nuevo cliente</label>
+        <input type="text" id="new-cliente-nombre" placeholder="Ej: Juan Pérez">
+      </div>
+      <div class="form-error" id="save-error"></div>
+      <div class="modal-btns">
+        <button class="btn-cancel" onclick="closeSaveModal()">Cancelar</button>
+        <button class="btn-save" id="save-confirm-btn" onclick="confirmSaveFlete()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <div class="overlay" id="overlay" onclick="closeModalOutside(event)">
     <div class="modal">
       <h3>Editar tarifa por hora</h3>
@@ -205,6 +227,30 @@
     </div>
   </div>
 
+  <div class="auth-overlay" id="auth-overlay">
+    <div class="auth-card">
+      <div class="truck-icon auth-logo">🚛</div>
+      <h3 id="auth-title">Iniciar sesión</h3>
+      <p id="auth-sub">Ingresá para guardar tus cobros en la nube.</p>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="field">
+        <label>Contraseña</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div class="form-error" id="auth-error"></div>
+      <button class="btn-save" id="auth-submit" onclick="authSubmit()">Iniciar sesión</button>
+      <div class="auth-switch">
+        <span id="auth-switch-text">¿No tenés cuenta?</span>
+        <a href="#" id="auth-switch-link" onclick="toggleAuthMode(event)">Crear cuenta</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabaseClient.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
